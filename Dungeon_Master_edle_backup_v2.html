@@ -2,20 +2,17 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>D_M_I v0.1.004</title>
+<title>⚔️ Dungeon Builder v30</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #090510; font-family: 'Courier New', monospace; color: #d4c5a0; overflow: hidden; display: flex; height: 100vh; }
-  #game { flex: 1; position: relative; background: linear-gradient(180deg, #170c19 0%, #090510 100%); }
+  body { background: #0a0612; font-family: 'Courier New', monospace; color: #d4c5a0; overflow: hidden; display: flex; height: 100vh; }
+  #game { flex: 1; position: relative; background: linear-gradient(180deg, #1a0f1f 0%, #0a0612 100%); }
   canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
   #ui { width: 360px; background: linear-gradient(180deg, #1a0f1f, #0d0612); border-left: 2px solid #4a2c5a; padding: 12px; overflow-y: auto; }
   #topBar { position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); border-bottom: 2px solid #ffd700; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
   #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; }
   #topBar .combo-display { font-size: 14px; color: #ffd700; }
   #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; }
-  #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; order: 1; }
-  #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; order: 2; }
-  #topBar .combo-display { font-size: 14px; color: #ffd700; order: 3; }
   .dev-indicator { position: absolute; top: 40px; left: 10px; background: rgba(255,0,0,0.3); border: 1px solid #ff4a4a; padding: 3px 8px; border-radius: 4px; font-size: 11px; color: #ff4a4a; font-weight: bold; display: none; }
   .dev-indicator.active { display: block; }
   .stat { background: rgba(0,0,0,0.5); border: 1px solid #6b3a8a; padding: 8px; margin-bottom: 10px; border-radius: 4px; }
@@ -65,11 +62,6 @@
   .spec-btn { background: linear-gradient(180deg, #4a2c5a, #2a1a3a); border: 1px solid #b88aff; }
   .spec-btn:hover:not(:disabled) { background: linear-gradient(180deg, #6a3c7a, #4a2c5a); }
   .spec-btn .locked { color: #888; font-style: italic; }
-  .settings-icon { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px 8px; margin-right: 10px; transition: transform 0.2s; }
-  .settings-icon:hover { transform: rotate(30deg); }
-  .floor-limit-control { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
-  .floor-limit-control button { width: 30px; height: 30px; font-size: 18px; font-weight: bold; }
-  .floor-limit-control input { width: 60px; text-align: center; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -79,9 +71,6 @@
     <div class="gold-display">💰 <span id="gold">250</span></div>
     <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
     <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
-    <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
-    <div class="gold-display">💰 <span id="gold">250</span></div>
-    <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
   </div>
   <div class="dev-indicator" id="devIndicator">🛠️ DEV MODE</div>
 </div>
@@ -89,12 +78,6 @@
   <div class="toggle-container">
     <span class="toggle-label">Равномерное размещение</span>
     <div class="toggle-switch active" id="modeToggle"></div>
-  <div style="display: flex; align-items: center; margin-bottom: 10px;">
-    <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
-    <div class="toggle-container" style="flex: 1; margin-bottom: 0;">
-      <span class="toggle-label">Равномерное размещение</span>
-      <div class="toggle-switch active" id="modeToggle"></div>
-    </div>
   </div>
   <div class="toggle-hint" id="toggleHint">👆 Нажми на нужный этаж</div>
   <button class="btn wave-btn" id="nextWave" style="display:none;"><span class="name">⚔️ НАЧАТЬ СЛЕДУЮЩУЮ ВОЛНУ</span></button>
@@ -175,12 +158,6 @@
     <div class="checkbox-row"><input type="checkbox" id="hideBardEffect"><label for="hideBardEffect">🚫 Убрать эффекты бардов</label></div>
     <div class="checkbox-row"><input type="checkbox" id="hideDeathEffect"><label for="hideDeathEffect">🚫 Убрать эффекты смерти героев</label></div>
     <hr style="border-color: #4a2c5a; margin: 15px 0;">
-    <div class="floor-limit-control">
-      <label for="floorLimit" style="font-size: 12px;">Лимит этажей:</label>
-      <button id="floorLimitDec">-</button>
-      <input type="number" id="floorLimit" value="10" min="1" max="50">
-      <button id="floorLimitInc">+</button>
-    </div>
     <div class="checkbox-row">
       <input type="checkbox" id="devMode">
       <label for="devMode" style="color: #ff4a4a; font-weight: bold;">🛠️ Режим разработчика</label>
@@ -304,9 +281,10 @@ const projectiles = [];
 const effects = [];
 let spawnTimer = 0, tick = 0;
 let lastTime = 0;
-let deltaTime = 0;
+let deltaTime = 0; // Delta time in seconds (target: 60 FPS = 1/60 ≈ 0.0167)
 const TARGET_FPS = 60;
-const DT = 1 / TARGET_FPS;
+const FRAME_TIME = 1000 / TARGET_FPS; // ms per frame at target FPS
+const DT = 1 / TARGET_FPS; // delta time multiplier (normalized to 60 FPS)
 
 function fmt(n) { 
   n = Math.floor(n); 
@@ -820,17 +798,18 @@ function getSpikesMultiplier(slot) {
   return position;
 }
 
-function updateTraps() {
+function updateTraps(dtMult) {
+  dtMult = dtMult || 1;
   for (const slot of trapSlots) {
     if (!slot.occupied || slot.disabled > 0) continue;
-    if (slot.cooldown > 0) slot.cooldown--;
-    if (slot.animTimer > 0) slot.animTimer--;
+    if (slot.cooldown > 0) slot.cooldown -= dtMult;
+    if (slot.animTimer > 0) slot.animTimer -= dtMult;
     const type = slot.trapType;
     
     if (type === 'arrow') {
       const arrowRange = hasArtifact('arrow_range') ? 750 : 250;
       if (slot.firingTimer > 0) {
-        slot.firingTimer--; slot.fireTick--;
+        slot.firingTimer -= dtMult; slot.fireTick -= dtMult;
         if (slot.fireTick <= 0) {
           slot.fireTick = 15;
           projectiles.push({
@@ -1030,8 +1009,8 @@ function update() {
   spawnTimer++;
   if (spawnTimer >= spawnRate / state.spawnMult) { spawnTimer = 0; spawnAdventurer(); }
   if (tick % 60 === 0) respawnMonsters();
-  for (const m of monsterInstances) { if (m.dead) { m.respawnTimer--; m.alpha = Math.max(0.15, m.alpha - 0.02); } }
-  updateTraps();
+  for (const m of monsterInstances) { if (m.dead) { m.respawnTimer -= dtMult; m.alpha = Math.max(0.15, m.alpha - 0.02); } }
+  updateTraps(dtMult);
   
   for (const a of adventurers) if (!a.dead) a.speedBuff = 0;
   for (const a of adventurers) {
@@ -1043,7 +1022,7 @@ function update() {
   }
   
   for (const a of adventurers) {
-    if (a.dead) { a.deathTimer++; continue; }
+    if (a.dead) { a.deathTimer += dtMult; continue; }
     if (a.class === 'berserker') {
       const rage = 1 - Math.max(0, a.hp / a.maxHp);
       a.currentSpeed = a.speed * (1 + rage * 1.5);
@@ -1051,7 +1030,7 @@ function update() {
     } else { a.currentSpeed = a.speed; a.currentAtk = a.atk; }
     
     if (a.poisoned > 0) {
-      a.poisoned--; a.poisonTick++;
+      a.poisoned -= dtMult; a.poisonTick++;
       if (a.poisonTick >= 60) { 
         a.poisonTick = 0; 
         let poisonDmg = damageOf('acid');
@@ -1061,16 +1040,16 @@ function update() {
       }
     }
     if (a.burning > 0) { 
-      a.burning--; 
+      a.burning -= dtMult; 
       if (tick % 12 === 0) { a.hp -= a.burningDmg || 15; addParticle(a.x, a.y, '#ff4500', { life: 20 }); } 
     }
-    if (a.frozen > 0) a.frozen--;
+    if (a.frozen > 0) a.frozen -= dtMult;
     if (a.class === 'mage' && !a.fighting && a.frozen <= 0) {
-      a.teleportCooldown--;
+      a.teleportCooldown -= dtMult;
       if (a.teleportCooldown <= 0 && Math.random() < 0.01) { a.x += 100; a.teleportCooldown = 135; addMagic(a.x, a.y, '#b88aff'); }
     }
     if (a.class === 'cleric') {
-      a.healCooldown--;
+      a.healCooldown -= dtMult;
       if (a.healCooldown <= 0) {
         let healed = false;
         for (const other of adventurers) {
@@ -1081,8 +1060,8 @@ function update() {
         a.healCooldown = Math.floor(Math.random() * 378) + 42;
       }
     }
-    if (a.class === 'rogue') a.disableCooldown--;
-    if (a.class === 'archer') a.rangedAtkCooldown--;
+    if (a.class === 'rogue') a.disableCooldown -= dtMult;
+    if (a.class === 'archer') a.rangedAtkCooldown -= dtMult;
     
     let nearestMonster = null, nearestDist = a.class === 'archer' ? 300 : 40;
     for (const m of monsterInstances) {
@@ -1118,7 +1097,7 @@ function update() {
     if (a.fighting) {
       if (a.fighting.dead || a.fighting.floor !== a.floor || Math.abs(a.fighting.x - a.x) > 60) { a.fighting = null; }
       else {
-        a.atkCooldown--;
+        a.atkCooldown -= dtMult;
         if (a.atkCooldown <= 0) {
           a.atkCooldown = 40; a.fighting.hp -= a.currentAtk;
           addParticle(a.fighting.x, a.fighting.y - 10, '#ffaa00', { life: 15, size: 2 });
@@ -1145,8 +1124,8 @@ function update() {
     if (a.fighting) continue;
     let speed = a.currentSpeed;
     if (a.speedBuff > 0) speed *= (1 + a.speedBuff);
-    if (a.slowed > 0) { speed *= 0.4; a.slowed--; }
-    a.x += speed;
+    if (a.slowed > 0) { speed *= 0.4; a.slowed -= dtMult; }
+    a.x += speed * dtMult;
     if (a.x > W - 50 && !a.dead) {
       // НОВАЯ ФОРМУЛА: базовое 20 × hpBonusMult × 2^(этаж-1)
       const loot = Math.floor(20 * state.hpBonusMult * Math.pow(2, state.floors - 1));
@@ -1191,7 +1170,7 @@ function update() {
         if (dist < minDist) { minDist = dist; target = a; }
       }
       if (target && minDist < 40) {
-        m.fighting = target; m.atkCooldown--;
+        m.fighting = target; m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 50; 
           let dmg = monsterDamageOf(m.type);
@@ -1199,7 +1178,7 @@ function update() {
           addParticle(target.x, target.y - 10, '#ff0000', { life: 15, size: 2 }); 
         }
       } else {
-        m.fighting = null; m.x -= 0.6;
+        m.fighting = null; m.x -= 0.6 * dtMult;
       }
       continue;
     }
@@ -1210,7 +1189,7 @@ function update() {
           if (a.dead || a.floor !== m.floor) continue;
           if (Math.abs(a.x - m.x) < 200) { heroNear = true; break; }
         }
-        if (heroNear) m.x += 0.3;
+        if (heroNear) m.x += 0.3 * dtMult;
         else if (Math.abs(m.x - m.homeX) > 5) m.x += (m.homeX - m.x) * 0.02;
       }
       let targets = [];
@@ -1220,7 +1199,7 @@ function update() {
         if (dist < 200) targets.push(a);
       }
       if (targets.length > 0) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) {
           m.atkCooldown = 120;
           for (const t of targets) { 
@@ -1242,7 +1221,7 @@ function update() {
     }
     if (nearestAdv) {
       if (m.ranged && nearestDist < skeletonRange) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 90; 
           const pierce = (m.type === 'skeleton' && hasArtifact('skeleton_buff')) ? 2 : 0;
@@ -1259,7 +1238,7 @@ function update() {
           }
         }
       } else if (!m.ranged && nearestDist < 40) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 50; 
           let dmg = monsterDamageOf(m.type);
@@ -1277,7 +1256,7 @@ function update() {
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
     p.prevX = p.x; p.prevY = p.y;
-    p.x += p.vx; p.y += p.vy; p.life--;
+    p.x += p.vx; p.y += p.vy; p.life -= dtMult;
     let removed = false;
     if (p.target && !p.target.dead) {
       const dist = Math.sqrt((p.x - p.target.x) ** 2 + (p.y - p.target.y) ** 2);
@@ -1326,9 +1305,9 @@ function update() {
     if (!removed && (p.life <= 0 || p.x < -50 || p.x > W + 50)) projectiles.splice(i, 1);
   }
   
-  for (let i = effects.length - 1; i >= 0; i--) { effects[i].life--; if (effects[i].life <= 0) effects.splice(i, 1); }
+  for (let i = effects.length - 1; i >= 0; i--) { effects[i].life -= dtMult; if (effects[i].life <= 0) effects.splice(i, 1); }
   for (let i = adventurers.length - 1; i >= 0; i--) if (adventurers[i].dead && adventurers[i].deathTimer > 80) adventurers.splice(i, 1);
-  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--; if (p.life <= 0) particles.splice(i, 1); }
+  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life -= dtMult; if (p.life <= 0) particles.splice(i, 1); }
 }
 
 function showWaveAlert(text, big = false) { 
@@ -1535,8 +1514,6 @@ function updateUI() {
   document.getElementById('cost-floor').textContent = devMode ? 'FREE' : '💰 ' + fmt(fc);
   document.getElementById('count-floor').textContent = state.floors;
   document.getElementById('addFloor').disabled = !devMode && state.gold < fc;
-  document.getElementById('count-floor').textContent = state.floors + '/' + FLOOR_LIMIT;
-  document.getElementById('addFloor').disabled = !devMode && (state.gold < fc || state.floors >= FLOOR_LIMIT);
   
   for (const type in state.traps) {
     const cost = costOf(type);
@@ -1645,7 +1622,6 @@ document.getElementById('nextWave').addEventListener('click', () => {
 
 document.getElementById('addFloor').addEventListener('click', () => {
   const cost = floorCost();
-  if (state.floors >= FLOOR_LIMIT) return;
   if (devMode || state.gold >= cost) { 
     if (!devMode) state.gold -= cost;
     state.floors++; 
@@ -1777,35 +1753,14 @@ document.getElementById('hideBardEffect').addEventListener('change', (e) => { se
 document.getElementById('hideDeathEffect').addEventListener('change', (e) => { settings.hideDeathEffect = e.target.checked; });
 document.getElementById('devMode').addEventListener('change', (e) => { devMode = e.target.checked; });
 
-// Лимит этажей
-const floorLimitInput = document.getElementById('floorLimit');
-const floorLimitDec = document.getElementById('floorLimitDec');
-const floorLimitInc = document.getElementById('floorLimitInc');
-let FLOOR_LIMIT = 10;
-
-floorLimitInput.value = FLOOR_LIMIT;
-floorLimitInput.addEventListener('change', () => {
-  let val = parseInt(floorLimitInput.value) || 10;
-  val = Math.max(1, Math.min(50, val));
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-floorLimitDec.addEventListener('click', () => {
-  let val = Math.max(1, (parseInt(floorLimitInput.value) || 10) - 1);
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-floorLimitInc.addEventListener('click', () => {
-  let val = Math.min(50, (parseInt(floorLimitInput.value) || 10) + 1);
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-
 initSlots();
-function loop() { update(); render(); updateUI(); requestAnimationFrame(loop); }
-loop();
+function loop(currentTime) { 
+  update(currentTime); 
+  render(); 
+  updateUI(); 
+  requestAnimationFrame(loop); 
+}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
-</html>
-

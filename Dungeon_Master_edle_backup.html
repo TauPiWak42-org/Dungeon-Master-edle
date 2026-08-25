@@ -2,20 +2,17 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>D_M_I v0.1.004</title>
+<title>⚔️ Dungeon Builder v30</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #090510; font-family: 'Courier New', monospace; color: #d4c5a0; overflow: hidden; display: flex; height: 100vh; }
-  #game { flex: 1; position: relative; background: linear-gradient(180deg, #170c19 0%, #090510 100%); }
+  body { background: #0a0612; font-family: 'Courier New', monospace; color: #d4c5a0; overflow: hidden; display: flex; height: 100vh; }
+  #game { flex: 1; position: relative; background: linear-gradient(180deg, #1a0f1f 0%, #0a0612 100%); }
   canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
   #ui { width: 360px; background: linear-gradient(180deg, #1a0f1f, #0d0612); border-left: 2px solid #4a2c5a; padding: 12px; overflow-y: auto; }
   #topBar { position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); border-bottom: 2px solid #ffd700; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
   #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; }
   #topBar .combo-display { font-size: 14px; color: #ffd700; }
   #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; }
-  #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; order: 1; }
-  #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; order: 2; }
-  #topBar .combo-display { font-size: 14px; color: #ffd700; order: 3; }
   .dev-indicator { position: absolute; top: 40px; left: 10px; background: rgba(255,0,0,0.3); border: 1px solid #ff4a4a; padding: 3px 8px; border-radius: 4px; font-size: 11px; color: #ff4a4a; font-weight: bold; display: none; }
   .dev-indicator.active { display: block; }
   .stat { background: rgba(0,0,0,0.5); border: 1px solid #6b3a8a; padding: 8px; margin-bottom: 10px; border-radius: 4px; }
@@ -65,11 +62,6 @@
   .spec-btn { background: linear-gradient(180deg, #4a2c5a, #2a1a3a); border: 1px solid #b88aff; }
   .spec-btn:hover:not(:disabled) { background: linear-gradient(180deg, #6a3c7a, #4a2c5a); }
   .spec-btn .locked { color: #888; font-style: italic; }
-  .settings-icon { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px 8px; margin-right: 10px; transition: transform 0.2s; }
-  .settings-icon:hover { transform: rotate(30deg); }
-  .floor-limit-control { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
-  .floor-limit-control button { width: 30px; height: 30px; font-size: 18px; font-weight: bold; }
-  .floor-limit-control input { width: 60px; text-align: center; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -79,9 +71,6 @@
     <div class="gold-display">💰 <span id="gold">250</span></div>
     <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
     <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
-    <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
-    <div class="gold-display">💰 <span id="gold">250</span></div>
-    <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
   </div>
   <div class="dev-indicator" id="devIndicator">🛠️ DEV MODE</div>
 </div>
@@ -89,12 +78,6 @@
   <div class="toggle-container">
     <span class="toggle-label">Равномерное размещение</span>
     <div class="toggle-switch active" id="modeToggle"></div>
-  <div style="display: flex; align-items: center; margin-bottom: 10px;">
-    <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
-    <div class="toggle-container" style="flex: 1; margin-bottom: 0;">
-      <span class="toggle-label">Равномерное размещение</span>
-      <div class="toggle-switch active" id="modeToggle"></div>
-    </div>
   </div>
   <div class="toggle-hint" id="toggleHint">👆 Нажми на нужный этаж</div>
   <button class="btn wave-btn" id="nextWave" style="display:none;"><span class="name">⚔️ НАЧАТЬ СЛЕДУЮЩУЮ ВОЛНУ</span></button>
@@ -175,12 +158,6 @@
     <div class="checkbox-row"><input type="checkbox" id="hideBardEffect"><label for="hideBardEffect">🚫 Убрать эффекты бардов</label></div>
     <div class="checkbox-row"><input type="checkbox" id="hideDeathEffect"><label for="hideDeathEffect">🚫 Убрать эффекты смерти героев</label></div>
     <hr style="border-color: #4a2c5a; margin: 15px 0;">
-    <div class="floor-limit-control">
-      <label for="floorLimit" style="font-size: 12px;">Лимит этажей:</label>
-      <button id="floorLimitDec">-</button>
-      <input type="number" id="floorLimit" value="10" min="1" max="50">
-      <button id="floorLimitInc">+</button>
-    </div>
     <div class="checkbox-row">
       <input type="checkbox" id="devMode">
       <label for="devMode" style="color: #ff4a4a; font-weight: bold;">🛠️ Режим разработчика</label>
@@ -303,10 +280,6 @@ const trapSlots = [];
 const projectiles = [];
 const effects = [];
 let spawnTimer = 0, tick = 0;
-let lastTime = 0;
-let deltaTime = 0;
-const TARGET_FPS = 60;
-const DT = 1 / TARGET_FPS;
 
 function fmt(n) { 
   n = Math.floor(n); 
@@ -1535,8 +1508,6 @@ function updateUI() {
   document.getElementById('cost-floor').textContent = devMode ? 'FREE' : '💰 ' + fmt(fc);
   document.getElementById('count-floor').textContent = state.floors;
   document.getElementById('addFloor').disabled = !devMode && state.gold < fc;
-  document.getElementById('count-floor').textContent = state.floors + '/' + FLOOR_LIMIT;
-  document.getElementById('addFloor').disabled = !devMode && (state.gold < fc || state.floors >= FLOOR_LIMIT);
   
   for (const type in state.traps) {
     const cost = costOf(type);
@@ -1645,7 +1616,6 @@ document.getElementById('nextWave').addEventListener('click', () => {
 
 document.getElementById('addFloor').addEventListener('click', () => {
   const cost = floorCost();
-  if (state.floors >= FLOOR_LIMIT) return;
   if (devMode || state.gold >= cost) { 
     if (!devMode) state.gold -= cost;
     state.floors++; 
@@ -1777,35 +1747,9 @@ document.getElementById('hideBardEffect').addEventListener('change', (e) => { se
 document.getElementById('hideDeathEffect').addEventListener('change', (e) => { settings.hideDeathEffect = e.target.checked; });
 document.getElementById('devMode').addEventListener('change', (e) => { devMode = e.target.checked; });
 
-// Лимит этажей
-const floorLimitInput = document.getElementById('floorLimit');
-const floorLimitDec = document.getElementById('floorLimitDec');
-const floorLimitInc = document.getElementById('floorLimitInc');
-let FLOOR_LIMIT = 10;
-
-floorLimitInput.value = FLOOR_LIMIT;
-floorLimitInput.addEventListener('change', () => {
-  let val = parseInt(floorLimitInput.value) || 10;
-  val = Math.max(1, Math.min(50, val));
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-floorLimitDec.addEventListener('click', () => {
-  let val = Math.max(1, (parseInt(floorLimitInput.value) || 10) - 1);
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-floorLimitInc.addEventListener('click', () => {
-  let val = Math.min(50, (parseInt(floorLimitInput.value) || 10) + 1);
-  FLOOR_LIMIT = val;
-  floorLimitInput.value = val;
-});
-
 initSlots();
 function loop() { update(); render(); updateUI(); requestAnimationFrame(loop); }
 loop();
 </script>
 </body>
 </html>
-</html>
-
