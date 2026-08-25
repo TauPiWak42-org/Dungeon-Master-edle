@@ -281,9 +281,10 @@ const projectiles = [];
 const effects = [];
 let spawnTimer = 0, tick = 0;
 let lastTime = 0;
-let deltaTime = 0;
+let deltaTime = 0; // Delta time in seconds (target: 60 FPS = 1/60 ≈ 0.0167)
 const TARGET_FPS = 60;
-const DT = 1 / TARGET_FPS;
+const FRAME_TIME = 1000 / TARGET_FPS; // ms per frame at target FPS
+const DT = 1 / TARGET_FPS; // delta time multiplier (normalized to 60 FPS)
 
 function fmt(n) { 
   n = Math.floor(n); 
@@ -797,17 +798,18 @@ function getSpikesMultiplier(slot) {
   return position;
 }
 
-function updateTraps() {
+function updateTraps(dtMult) {
+  dtMult = dtMult || 1;
   for (const slot of trapSlots) {
     if (!slot.occupied || slot.disabled > 0) continue;
-    if (slot.cooldown > 0) slot.cooldown--;
-    if (slot.animTimer > 0) slot.animTimer--;
+    if (slot.cooldown > 0) slot.cooldown -= dtMult;
+    if (slot.animTimer > 0) slot.animTimer -= dtMult;
     const type = slot.trapType;
     
     if (type === 'arrow') {
       const arrowRange = hasArtifact('arrow_range') ? 750 : 250;
       if (slot.firingTimer > 0) {
-        slot.firingTimer--; slot.fireTick--;
+        slot.firingTimer -= dtMult; slot.fireTick -= dtMult;
         if (slot.fireTick <= 0) {
           slot.fireTick = 15;
           projectiles.push({
@@ -1007,8 +1009,8 @@ function update() {
   spawnTimer++;
   if (spawnTimer >= spawnRate / state.spawnMult) { spawnTimer = 0; spawnAdventurer(); }
   if (tick % 60 === 0) respawnMonsters();
-  for (const m of monsterInstances) { if (m.dead) { m.respawnTimer--; m.alpha = Math.max(0.15, m.alpha - 0.02); } }
-  updateTraps();
+  for (const m of monsterInstances) { if (m.dead) { m.respawnTimer -= dtMult; m.alpha = Math.max(0.15, m.alpha - 0.02); } }
+  updateTraps(dtMult);
   
   for (const a of adventurers) if (!a.dead) a.speedBuff = 0;
   for (const a of adventurers) {
@@ -1020,7 +1022,7 @@ function update() {
   }
   
   for (const a of adventurers) {
-    if (a.dead) { a.deathTimer++; continue; }
+    if (a.dead) { a.deathTimer += dtMult; continue; }
     if (a.class === 'berserker') {
       const rage = 1 - Math.max(0, a.hp / a.maxHp);
       a.currentSpeed = a.speed * (1 + rage * 1.5);
@@ -1028,7 +1030,7 @@ function update() {
     } else { a.currentSpeed = a.speed; a.currentAtk = a.atk; }
     
     if (a.poisoned > 0) {
-      a.poisoned--; a.poisonTick++;
+      a.poisoned -= dtMult; a.poisonTick++;
       if (a.poisonTick >= 60) { 
         a.poisonTick = 0; 
         let poisonDmg = damageOf('acid');
@@ -1038,16 +1040,16 @@ function update() {
       }
     }
     if (a.burning > 0) { 
-      a.burning--; 
+      a.burning -= dtMult; 
       if (tick % 12 === 0) { a.hp -= a.burningDmg || 15; addParticle(a.x, a.y, '#ff4500', { life: 20 }); } 
     }
-    if (a.frozen > 0) a.frozen--;
+    if (a.frozen > 0) a.frozen -= dtMult;
     if (a.class === 'mage' && !a.fighting && a.frozen <= 0) {
-      a.teleportCooldown--;
+      a.teleportCooldown -= dtMult;
       if (a.teleportCooldown <= 0 && Math.random() < 0.01) { a.x += 100; a.teleportCooldown = 135; addMagic(a.x, a.y, '#b88aff'); }
     }
     if (a.class === 'cleric') {
-      a.healCooldown--;
+      a.healCooldown -= dtMult;
       if (a.healCooldown <= 0) {
         let healed = false;
         for (const other of adventurers) {
@@ -1058,8 +1060,8 @@ function update() {
         a.healCooldown = Math.floor(Math.random() * 378) + 42;
       }
     }
-    if (a.class === 'rogue') a.disableCooldown--;
-    if (a.class === 'archer') a.rangedAtkCooldown--;
+    if (a.class === 'rogue') a.disableCooldown -= dtMult;
+    if (a.class === 'archer') a.rangedAtkCooldown -= dtMult;
     
     let nearestMonster = null, nearestDist = a.class === 'archer' ? 300 : 40;
     for (const m of monsterInstances) {
@@ -1095,7 +1097,7 @@ function update() {
     if (a.fighting) {
       if (a.fighting.dead || a.fighting.floor !== a.floor || Math.abs(a.fighting.x - a.x) > 60) { a.fighting = null; }
       else {
-        a.atkCooldown--;
+        a.atkCooldown -= dtMult;
         if (a.atkCooldown <= 0) {
           a.atkCooldown = 40; a.fighting.hp -= a.currentAtk;
           addParticle(a.fighting.x, a.fighting.y - 10, '#ffaa00', { life: 15, size: 2 });
@@ -1122,8 +1124,8 @@ function update() {
     if (a.fighting) continue;
     let speed = a.currentSpeed;
     if (a.speedBuff > 0) speed *= (1 + a.speedBuff);
-    if (a.slowed > 0) { speed *= 0.4; a.slowed--; }
-    a.x += speed;
+    if (a.slowed > 0) { speed *= 0.4; a.slowed -= dtMult; }
+    a.x += speed * dtMult;
     if (a.x > W - 50 && !a.dead) {
       // НОВАЯ ФОРМУЛА: базовое 20 × hpBonusMult × 2^(этаж-1)
       const loot = Math.floor(20 * state.hpBonusMult * Math.pow(2, state.floors - 1));
@@ -1168,7 +1170,7 @@ function update() {
         if (dist < minDist) { minDist = dist; target = a; }
       }
       if (target && minDist < 40) {
-        m.fighting = target; m.atkCooldown--;
+        m.fighting = target; m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 50; 
           let dmg = monsterDamageOf(m.type);
@@ -1176,7 +1178,7 @@ function update() {
           addParticle(target.x, target.y - 10, '#ff0000', { life: 15, size: 2 }); 
         }
       } else {
-        m.fighting = null; m.x -= 0.6;
+        m.fighting = null; m.x -= 0.6 * dtMult;
       }
       continue;
     }
@@ -1187,7 +1189,7 @@ function update() {
           if (a.dead || a.floor !== m.floor) continue;
           if (Math.abs(a.x - m.x) < 200) { heroNear = true; break; }
         }
-        if (heroNear) m.x += 0.3;
+        if (heroNear) m.x += 0.3 * dtMult;
         else if (Math.abs(m.x - m.homeX) > 5) m.x += (m.homeX - m.x) * 0.02;
       }
       let targets = [];
@@ -1197,7 +1199,7 @@ function update() {
         if (dist < 200) targets.push(a);
       }
       if (targets.length > 0) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) {
           m.atkCooldown = 120;
           for (const t of targets) { 
@@ -1219,7 +1221,7 @@ function update() {
     }
     if (nearestAdv) {
       if (m.ranged && nearestDist < skeletonRange) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 90; 
           const pierce = (m.type === 'skeleton' && hasArtifact('skeleton_buff')) ? 2 : 0;
@@ -1236,7 +1238,7 @@ function update() {
           }
         }
       } else if (!m.ranged && nearestDist < 40) {
-        m.atkCooldown--;
+        m.atkCooldown -= dtMult;
         if (m.atkCooldown <= 0) { 
           m.atkCooldown = 50; 
           let dmg = monsterDamageOf(m.type);
@@ -1254,7 +1256,7 @@ function update() {
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
     p.prevX = p.x; p.prevY = p.y;
-    p.x += p.vx; p.y += p.vy; p.life--;
+    p.x += p.vx; p.y += p.vy; p.life -= dtMult;
     let removed = false;
     if (p.target && !p.target.dead) {
       const dist = Math.sqrt((p.x - p.target.x) ** 2 + (p.y - p.target.y) ** 2);
@@ -1303,9 +1305,9 @@ function update() {
     if (!removed && (p.life <= 0 || p.x < -50 || p.x > W + 50)) projectiles.splice(i, 1);
   }
   
-  for (let i = effects.length - 1; i >= 0; i--) { effects[i].life--; if (effects[i].life <= 0) effects.splice(i, 1); }
+  for (let i = effects.length - 1; i >= 0; i--) { effects[i].life -= dtMult; if (effects[i].life <= 0) effects.splice(i, 1); }
   for (let i = adventurers.length - 1; i >= 0; i--) if (adventurers[i].dead && adventurers[i].deathTimer > 80) adventurers.splice(i, 1);
-  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--; if (p.life <= 0) particles.splice(i, 1); }
+  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life -= dtMult; if (p.life <= 0) particles.splice(i, 1); }
 }
 
 function showWaveAlert(text, big = false) { 
@@ -1752,8 +1754,13 @@ document.getElementById('hideDeathEffect').addEventListener('change', (e) => { s
 document.getElementById('devMode').addEventListener('change', (e) => { devMode = e.target.checked; });
 
 initSlots();
-function loop() { update(); render(); updateUI(); requestAnimationFrame(loop); }
-loop();
+function loop(currentTime) { 
+  update(currentTime); 
+  render(); 
+  updateUI(); 
+  requestAnimationFrame(loop); 
+}
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
