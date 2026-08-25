@@ -1,0 +1,39 @@
+```
+# HTML files that appear to be temporary or backup files
+*.html
+
+# Backup files
+*_backup*
+
+# Local environment files
+.env.local
+.env
+*.env.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Logs
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Build artifacts
+dist/
+build/
+*.o
+*.obj
+*.out
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+```
