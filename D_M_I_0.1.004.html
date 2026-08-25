@@ -10,6 +10,9 @@
   canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
   #ui { width: 360px; background: linear-gradient(180deg, #1a0f1f, #0d0612); border-left: 2px solid #4a2c5a; padding: 12px; overflow-y: auto; }
   #topBar { position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); border-bottom: 2px solid #ffd700; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+  #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; }
+  #topBar .combo-display { font-size: 14px; color: #ffd700; }
+  #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; }
   #topBar .hp-bonus { font-size: 12px; color: #ff6b9d; order: 1; }
   #topBar .gold-display { font-size: 18px; color: #ffd700; font-weight: bold; order: 2; }
   #topBar .combo-display { font-size: 14px; color: #ffd700; order: 3; }
@@ -73,6 +76,9 @@
 <div id="game">
   <canvas id="cv"></canvas>
   <div id="topBar">
+    <div class="gold-display">💰 <span id="gold">250</span></div>
+    <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
+    <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
     <div class="hp-bonus">💪 HP: +<span id="hpBonus">0</span>%</div>
     <div class="gold-display">💰 <span id="gold">250</span></div>
     <div class="combo-display">🔥 Комбо: x<span id="combo">1.0</span> (<span id="comboCount">0</span>)</div>
@@ -80,6 +86,9 @@
   <div class="dev-indicator" id="devIndicator">🛠️ DEV MODE</div>
 </div>
 <div id="ui">
+  <div class="toggle-container">
+    <span class="toggle-label">Равномерное размещение</span>
+    <div class="toggle-switch active" id="modeToggle"></div>
   <div style="display: flex; align-items: center; margin-bottom: 10px;">
     <button class="settings-icon" id="settingsBtn" title="Настройки">⚙️</button>
     <div class="toggle-container" style="flex: 1; margin-bottom: 0;">
@@ -149,6 +158,10 @@
     <span class="name">🌟 ПЕРЕРОЖДЕНИЕ</span>
     <div class="desc" id="rebirthInfo">Требуется 500 убийств. +25% к урону ловушек и монстров. Выбор артефакта.</div>
   </button>
+  
+  <div style="margin-top: 15px; border-top: 2px solid #4a2c5a; padding-top: 10px;">
+    <button class="btn" id="settingsBtn">⚙️ Настройки</button>
+  </div>
 </div>
 
 <div class="modal" id="settingsModal">
@@ -1520,6 +1533,8 @@ function updateUI() {
   
   const fc = floorCost();
   document.getElementById('cost-floor').textContent = devMode ? 'FREE' : '💰 ' + fmt(fc);
+  document.getElementById('count-floor').textContent = state.floors;
+  document.getElementById('addFloor').disabled = !devMode && state.gold < fc;
   document.getElementById('count-floor').textContent = state.floors + '/' + FLOOR_LIMIT;
   document.getElementById('addFloor').disabled = !devMode && (state.gold < fc || state.floors >= FLOOR_LIMIT);
   
@@ -1791,5 +1806,6 @@ function loop() { update(); render(); updateUI(); requestAnimationFrame(loop); }
 loop();
 </script>
 </body>
+</html>
 </html>
 
